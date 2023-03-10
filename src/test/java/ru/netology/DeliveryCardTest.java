@@ -24,7 +24,7 @@ public class DeliveryCardTest {
 
     @BeforeEach
     void setup() {
-//        Configuration.holdBrowserOpen = true;
+        Configuration.holdBrowserOpen = true;
         open("http://localhost:9999/");
     }
 
