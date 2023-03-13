@@ -1,6 +1,7 @@
 package ru.netology;
 
 
+import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,18 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DeliveryCardTest {
 
-    private String dateForPositiveTest() {
-        LocalDate date = LocalDate.now();
-        date = date.plusDays(4);
-        DateTimeFormatter format = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        return date.format(format);
-    }
-
-    private String dateForNegativeTest() {
-        LocalDate date = LocalDate.now();
-        date = date.plusDays(1);
-        DateTimeFormatter format = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        return date.format(format);
+    private String dateForTest(int days) {
+        return LocalDate.now().plusDays(days).format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
     }
 
     @BeforeEach
@@ -38,29 +29,37 @@ public class DeliveryCardTest {
 
     @Test
     void shouldReturnInfoHappyOrder() {
+        String planningDate = dateForTest(4);
+
         $("[data-test-id=city] input").setValue("Якутск");
         $("[data-test-id=date] input").sendKeys(Keys.CONTROL + "a");
         $("[data-test-id=date] input").sendKeys("\b");
-        $("[data-test-id=date] input").setValue(dateForPositiveTest());
+        $("[data-test-id=date] input").setValue(planningDate);
         $("[data-test-id=name] input").setValue("Петров Иван");
         $("[data-test-id=phone] input").setValue("+79998888888");
         $("[data-test-id=agreement] span").click();
         $x("//span[text()='Забронировать']").click();
-        $x("//div[contains(@class, 'notification__title')]").should(appear, Duration.ofSeconds(15));
+        $(".notification__content")
+                .shouldHave(Condition.text(("Встреча успешно забронирована на " + planningDate)), Duration.ofSeconds(15))
+                .shouldBe(visible);
     }
 
     @Test
     void shouldReturnInfoHappyOrderBySearchCityOfList() {
+        String planningDate = dateForTest(3);
+
         $("[data-test-id=city] input").setValue("Вла");
         $$(".menu-item__control").first().click();
         $("[data-test-id=date] input").sendKeys(Keys.CONTROL + "a");
         $("[data-test-id=date] input").sendKeys("\b");
-        $("[data-test-id=date] input").setValue(dateForPositiveTest());
+        $("[data-test-id=date] input").setValue(planningDate);
         $("[data-test-id=name] input").setValue("Петров Иван");
         $("[data-test-id=phone] input").setValue("+79998888888");
         $("[data-test-id=agreement] span").click();
         $x("//span[text()='Забронировать']").click();
-        $x("//div[contains(@class, 'notification__title')]").should(appear, Duration.ofSeconds(15));
+        $(".notification__content")
+                .shouldHave(Condition.text(("Встреча успешно забронирована на " + planningDate)), Duration.ofSeconds(15))
+                .shouldBe(visible);
     }
 
     @Test
@@ -68,14 +67,12 @@ public class DeliveryCardTest {
         $("[data-test-id=city] input").setValue("Катайск");
         $("[data-test-id=date] input").sendKeys(Keys.CONTROL + "a");
         $("[data-test-id=date] input").sendKeys("\b");
-        $("[data-test-id=date] input").setValue(dateForPositiveTest());
+        $("[data-test-id=date] input").setValue(dateForTest(4));
         $("[data-test-id=name] input").setValue("Петров Иван");
         $("[data-test-id=phone] input").setValue("+79998888888");
         $("[data-test-id=agreement] span").click();
         $x("//span[text()='Забронировать']").click();
-        String expected = "Доставка в выбранный город недоступна";
-        String actual = $("[data-test-id=city].input_invalid .input__sub").getText().trim();
-        assertEquals(expected, actual);
+        $("[data-test-id=city].input_invalid .input__sub").shouldHave(exactText("Доставка в выбранный город недоступна"));
     }
 
     @Test
@@ -83,14 +80,12 @@ public class DeliveryCardTest {
         $("[data-test-id=city] input").setValue("Якутск");
         $("[data-test-id=date] input").sendKeys(Keys.CONTROL + "a");
         $("[data-test-id=date] input").sendKeys("\b");
-        $("[data-test-id=date] input").setValue(dateForNegativeTest());
+        $("[data-test-id=date] input").setValue(dateForTest(2));
         $("[data-test-id=name] input").setValue("Петров Иван");
         $("[data-test-id=phone] input").setValue("+79998888888");
         $("[data-test-id=agreement] span").click();
         $x("//span[text()='Забронировать']").click();
-        String expected = "Заказ на выбранную дату невозможен";
-        String actual = $("[data-test-id=date] .input_invalid .input__sub").getText().trim();
-        assertEquals(expected, actual);
+        $("[data-test-id=date] .input_invalid .input__sub").shouldHave(exactText("Заказ на выбранную дату невозможен"));
     }
 
     @Test
@@ -98,14 +93,12 @@ public class DeliveryCardTest {
         $("[data-test-id=city] input").setValue("Якутск");
         $("[data-test-id=date] input").sendKeys(Keys.CONTROL + "a");
         $("[data-test-id=date] input").sendKeys("\b");
-        $("[data-test-id=date] input").setValue(dateForPositiveTest());
+        $("[data-test-id=date] input").setValue(dateForTest(4));
         $("[data-test-id=name] input").setValue("John Smith");
         $("[data-test-id=phone] input").setValue("+79998888888");
         $("[data-test-id=agreement] span").click();
         $x("//span[text()='Забронировать']").click();
-        String expected = "Имя и Фамилия указаные неверно. Допустимы только русские буквы, пробелы и дефисы.";
-        String actual = $("[data-test-id=name].input_invalid .input__sub").getText().trim();
-        assertEquals(expected, actual);
+        $("[data-test-id=name].input_invalid .input__sub").shouldHave(exactText("Имя и Фамилия указаные неверно. Допустимы только русские буквы, пробелы и дефисы."));
     }
 
     @Test
@@ -113,14 +106,12 @@ public class DeliveryCardTest {
         $("[data-test-id=city] input").setValue("Якутск");
         $("[data-test-id=date] input").sendKeys(Keys.CONTROL + "a");
         $("[data-test-id=date] input").sendKeys("\b");
-        $("[data-test-id=date] input").setValue(dateForPositiveTest());
+        $("[data-test-id=date] input").setValue(dateForTest(4));
         $("[data-test-id=name] input").setValue("Петров Иван");
         $("[data-test-id=phone] input").setValue("999888");
         $("[data-test-id=agreement] span").click();
         $x("//span[text()='Забронировать']").click();
-        String expected = "Телефон указан неверно. Должно быть 11 цифр, например, +79012345678.";
-        String actual = $("[data-test-id=phone].input_invalid .input__sub").getText().trim();
-        assertEquals(expected, actual);
+        $("[data-test-id=phone].input_invalid .input__sub").shouldHave(exactText("Телефон указан неверно. Должно быть 11 цифр, например, +79012345678."));
     }
 
     @Test
@@ -128,13 +119,11 @@ public class DeliveryCardTest {
         $("[data-test-id=city] input").setValue("Якутск");
         $("[data-test-id=date] input").sendKeys(Keys.CONTROL + "a");
         $("[data-test-id=date] input").sendKeys("\b");
-        $("[data-test-id=date] input").setValue(dateForPositiveTest());
+        $("[data-test-id=date] input").setValue(dateForTest(4));
         $("[data-test-id=name] input").setValue("Петров Иван");
         $("[data-test-id=phone] input").setValue("+79998888888");
         $x("//span[text()='Забронировать']").click();
-        String expected = "rgba(255, 92, 92, 1)";
-        String actual = $("[data-test-id=agreement] .checkbox__text").getCssValue("color");
-        assertEquals(expected, actual);
+        $("[data-test-id=agreement] .checkbox__text").shouldHave(cssValue("color", "rgba(255, 92, 92, 1)"));
     }
 
     @Test
@@ -142,14 +131,12 @@ public class DeliveryCardTest {
         $("[data-test-id=city] input").setValue("");
         $("[data-test-id=date] input").sendKeys(Keys.CONTROL + "a");
         $("[data-test-id=date] input").sendKeys("\b");
-        $("[data-test-id=date] input").setValue(dateForPositiveTest());
+        $("[data-test-id=date] input").setValue(dateForTest(4));
         $("[data-test-id=name] input").setValue("Петров Иван");
         $("[data-test-id=phone] input").setValue("+79998888888");
         $("[data-test-id=agreement] span").click();
         $x("//span[text()='Забронировать']").click();
-        String expected = "Поле обязательно для заполнения";
-        String actual = $("[data-test-id=city].input_invalid .input__sub").getText().trim();
-        assertEquals(expected, actual);
+        $("[data-test-id=city].input_invalid .input__sub").shouldHave(exactText("Поле обязательно для заполнения"));
     }
 
     @Test
@@ -161,9 +148,7 @@ public class DeliveryCardTest {
         $("[data-test-id=phone] input").setValue("+79998888888");
         $("[data-test-id=agreement] span").click();
         $x("//span[text()='Забронировать']").click();
-        String expected = "Неверно введена дата";
-        String actual = $("[data-test-id=date] .input_invalid .input__sub").getText().trim();
-        assertEquals(expected, actual);
+        $("[data-test-id=date] .input_invalid .input__sub").shouldHave(exactText("Неверно введена дата"));
     }
 
     @Test
@@ -171,14 +156,12 @@ public class DeliveryCardTest {
         $("[data-test-id=city] input").setValue("Якутск");
         $("[data-test-id=date] input").sendKeys(Keys.CONTROL + "a");
         $("[data-test-id=date] input").sendKeys("\b");
-        $("[data-test-id=date] input").setValue(dateForPositiveTest());
+        $("[data-test-id=date] input").setValue(dateForTest(4));
         $("[data-test-id=name] input").setValue("");
         $("[data-test-id=phone] input").setValue("+79998888888");
         $("[data-test-id=agreement] span").click();
         $x("//span[text()='Забронировать']").click();
-        String expected = "Поле обязательно для заполнения";
-        String actual = $("[data-test-id=name].input_invalid .input__sub").getText().trim();
-        assertEquals(expected, actual);
+        $("[data-test-id=name].input_invalid .input__sub").shouldHave(exactText("Поле обязательно для заполнения"));
     }
 
     @Test
@@ -186,13 +169,11 @@ public class DeliveryCardTest {
         $("[data-test-id=city] input").setValue("Якутск");
         $("[data-test-id=date] input").sendKeys(Keys.CONTROL + "a");
         $("[data-test-id=date] input").sendKeys("\b");
-        $("[data-test-id=date] input").setValue(dateForPositiveTest());
+        $("[data-test-id=date] input").setValue(dateForTest(4));
         $("[data-test-id=name] input").setValue("Петров Иван");
         $("[data-test-id=phone] input").setValue("");
         $("[data-test-id=agreement] span").click();
         $x("//span[text()='Забронировать']").click();
-        String expected = "Поле обязательно для заполнения";
-        String actual = $("[data-test-id=phone].input_invalid .input__sub").getText().trim();
-        assertEquals(expected, actual);
+        $("[data-test-id=phone].input_invalid .input__sub").shouldHave(exactText("Поле обязательно для заполнения"));
     }
 }
